@@ -16,3 +16,14 @@ This project is a browser extension focused on boosting productivity using AI-po
 
 ## Getting Started
 1. Clone this repository:  
+git clone https://github.com/Atomiicradius/AI_Browser_Extension.git
+
+2. Install dependencies (see `/frontend` and `/backend` folders for details)
+3. Follow the setup guides in each folder
+
+## Contributing
+- Fork the repo and submit pull requests
+- Use clear commit messages and branch names
+- See `/docs/contributing.md` for guidelines (to be added)
+
+

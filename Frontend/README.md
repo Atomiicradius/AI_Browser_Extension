@@ -11,3 +11,10 @@ This folder contains all source code and assets for the browser extension's user
 ## Getting Started
 1. Navigate to this folder:
 
+2. Install any required frontend dependencies (if using a build system):
+
+3. Follow instructions in the main README for loading the extension in Developer Mode.
+
+## Notes
+- UI/UX mockups and files will go here.
+- Coordination for styling, scripts, and new features is done via issues or pull requests.

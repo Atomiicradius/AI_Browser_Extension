@@ -4,10 +4,9 @@
 This project is a browser extension focused on boosting productivity using AI-powered features. Designed as a collaborative effort, it aims to showcase practical AI capabilities within the browser.
 
 ## Features (Planned)
-- Task automation and smart suggestions
 - Quick access to productivity tools
 - Content summarization or context-aware assistance
-- Integration with popular productivity services (Google Docs, calendar, etc.)
+- Distraction pattern seeker
 
 ## Tech Stack
 - **Frontend:** JavaScript/HTML/CSS (Chrome Extension, Manifest V3)

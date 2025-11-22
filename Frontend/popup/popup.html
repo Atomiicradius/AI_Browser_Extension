@@ -1,13 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Productivity Assistant</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body class="theme-light">
   <div class="background-gradient"></div>
   <div class="container hero-animate">
+
+    <!-- Header and Theme Switch -->
     <div class="header">
       <div class="logo-section">
         <div class="logo-icon">
@@ -36,23 +39,68 @@
       </div>
       <p class="subtitle">Powered by Gemini 2.5</p>
     </div>
-    
-    <button id="summarizeBtn" class="btn-primary ripple" aria-label="Summarize">
-      <span class="btn-text">Summarize Page</span>
-      <span class="spinner hidden"></span>
-    </button>
-    
-    <div id="result" class="result-container"></div>
-    
-    <div class="footer">
-      <a href="history.html" class="history-link" aria-label="View all history">
-        <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24" style="margin-right:7px;">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-        <span>View History</span>
-      </a>
+
+    <!-- Tab Navigation -->
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="features">Features</button>
+      <button class="tab-btn" data-tab="chat">Page Chat</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
     </div>
+
+    <!-- Tab 1: Main Features (your original content) -->
+    <div class="tab-content active" id="features">
+      <button id="summarizeBtn" class="btn-primary ripple" aria-label="Summarize">
+        <span class="btn-text">Summarize Page</span>
+        <span class="spinner hidden"></span>
+      </button>
+      <div id="result" class="result-container"></div>
+      <div class="footer">
+        <a href="history.html" class="history-link" aria-label="View all history">
+          <svg width="20" height="20" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24" style="margin-right:7px;">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          <span>View History</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Tab 2: Page Chat Feature -->
+    <div class="tab-content" id="chat">
+      <div class="chat-header">
+        <h3>Chat About This Page</h3>
+        <button id="clearChat" class="icon-btn" title="Clear chat">🗑️</button>
+      </div>
+      <div id="chatMessages" class="chat-messages">
+        <div class="welcome-message">
+          <p>👋 Hi! I can help you understand this webpage.</p>
+          <p>Ask me anything about the content you're viewing!</p>
+        </div>
+      </div>
+      <div class="chat-input-container">
+        <textarea 
+          id="chatInput" 
+          placeholder="Ask about this page..."
+          rows="2"
+        ></textarea>
+        <button id="sendMessage" class="send-btn">
+          <span>Send</span>
+          <span class="icon">📤</span>
+        </button>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-btn" data-prompt="Summarize this page">📝 Summarize</button>
+        <button class="quick-btn" data-prompt="What are the main points?">💡 Key Points</button>
+        <button class="quick-btn" data-prompt="Explain this in simple terms">🎯 Simplify</button>
+      </div>
+    </div>
+
+    <!-- Tab 3: Settings -->
+    <div class="tab-content" id="settings">
+      <h2>Settings</h2>
+      <p>Your settings (dark mode, etc.) go here...</p>
+    </div>
+    
   </div>
   <script src="../utils/storage.js"></script>
   <script src="popup.js"></script>

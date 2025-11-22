@@ -1,5 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-  // DOM references
+  // DOM references for tabbing
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const tabContents = document.querySelectorAll('.tab-content');
+  
+  // Tab switching logic
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      tabContents.forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById(btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  // DOM references for theme and summarization
   const themeToggle = document.getElementById('themeToggle');
   const summarizeBtn = document.getElementById('summarizeBtn');
   const resultDiv = document.getElementById('result');
@@ -23,58 +37,62 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Button ripple effect for Summarize button ---
-  summarizeBtn.addEventListener('mousedown', function(e) {
-    this.classList.add('ripple');
-    setTimeout(() => this.classList.remove('ripple'), 450);
-  });
+  if (summarizeBtn) {
+    summarizeBtn.addEventListener('mousedown', function(e) {
+      this.classList.add('ripple');
+      setTimeout(() => this.classList.remove('ripple'), 450);
+    });
+  }
 
   // --- Main summarization logic ---
-  summarizeBtn.addEventListener('click', async () => {
-    try {
-      setLoadingState(true);
-      resultDiv.innerHTML = '';
+  if (summarizeBtn) {
+    summarizeBtn.addEventListener('click', async () => {
+      try {
+        setLoadingState(true);
+        resultDiv.innerHTML = '';
 
-      // Get active tab info (title, url, favicon)
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      const faviconUrl = tab.favIconUrl || '';
+        // Get active tab info (title, url, favicon)
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        const faviconUrl = tab.favIconUrl || '';
 
-      // Inject content extractor
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ['utils/contentExtractor.js']
-      });
+        // Inject content extractor
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['utils/contentExtractor.js']
+        });
 
-      // Extract summary-ready content
-      const [{ result: content }] = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => (typeof extractMainContent === 'function' ? extractMainContent() : document.body.innerText)
-      });
+        // Extract summary-ready content
+        const [{ result: content }] = await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          func: () => (typeof extractMainContent === 'function' ? extractMainContent() : document.body.innerText)
+        });
 
-      if (!content || content.trim().length < 100) throw new Error('Page content is too short or empty');
+        if (!content || content.trim().length < 100) throw new Error('Page content is too short or empty');
 
-      // Send to backend
-      const response = await fetch('http://localhost:3000/api/summarize', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
-      });
-      if (!response.ok) throw new Error((await response.json()).error || `Backend returned error: ${response.statusText}`);
+        // Send to backend
+        const response = await fetch('http://localhost:3000/api/summarize', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content })
+        });
+        if (!response.ok) throw new Error((await response.json()).error || `Backend returned error: ${response.statusText}`);
 
-      const data = await response.json();
-      if (!data.summary) throw new Error('No summary received from backend');
+        const data = await response.json();
+        if (!data.summary) throw new Error('No summary received from backend');
 
-      // Save to storage (pinned false by default)
-      await saveSummaryToStorage(tab.url, tab.title, data.summary, false, faviconUrl);
+        // Save to storage (pinned false by default)
+        await saveSummaryToStorage(tab.url, tab.title, data.summary, false, faviconUrl);
 
-      // Animated summary display with all effects!
-      displaySummary(tab.url, tab.title, data.summary, false, faviconUrl);
+        // Animated summary display with all effects!
+        displaySummary(tab.url, tab.title, data.summary, false, faviconUrl);
 
-    } catch (error) {
-      displayError(error.message);
-    } finally {
-      setLoadingState(false);
-    }
-  });
+      } catch (error) {
+        displayError(error.message);
+      } finally {
+        setLoadingState(false);
+      }
+    });
+  }
 
   async function saveSummaryToStorage(url, title, summary, pinned, faviconUrl) {
     try {
@@ -91,8 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function setLoadingState(isLoading) {
-    summarizeBtn.disabled = !!isLoading;
-    summarizeBtn.classList.toggle('loading', !!isLoading);
+    if (summarizeBtn) {
+      summarizeBtn.disabled = !!isLoading;
+      summarizeBtn.classList.toggle('loading', !!isLoading);
+    }
   }
 
   async function displaySummary(url, title, summary, pinned, faviconUrl) {
@@ -209,4 +229,180 @@ document.addEventListener('DOMContentLoaded', () => {
   function getErrorIcon() {
     return `<svg width="22" height="22" fill="none" stroke="#ef4444" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
   }
+
+  // --- Quick Action Buttons for Page Chat ---
+// --- Quick Action Buttons for Page Chat (Structured Bullet Points) ---
+document.querySelectorAll('.quick-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const pageContext = await getPageContext(tab.id);
+
+    const promptType = btn.getAttribute('data-prompt');
+    let actionLabel = '';
+    let prompt = '';
+    // Truncate content to prevent too-large input
+    const truncatedContent = pageContext.mainContent.slice(0, 2000);
+
+    if (promptType === "Summarize this page") {
+      actionLabel = "📝 Summarize";
+      prompt = `Summarize this page in exactly 3-5 clear bullet points using dashes (-) only. Do NOT include any introductory text, conclusion, or repeated asterisks. Only reply with:
+- Main point 1
+- Main point 2
+Content:
+${truncatedContent}`;
+    } else if (promptType === "What are the main points?") {
+      actionLabel = "💡 Extract key points";
+      prompt = `List the most important key points with keywords from this page, responding ONLY with 3-5 bullet points using dashes (-). No introduction, no extra text:
+- Key point 1
+- Key point 2
+- Keywords
+Content:
+${truncatedContent}`;
+    } else if (promptType === "Explain this in simple terms") {
+      actionLabel = "🎯 Simplify";
+      prompt = `Explain the main ideas from this page in simple language for a beginner. Only use bullet points (dashes), no extra explanation, introduction, or asterisks. Use at least 3 points, but no more than 6:
+- Simple point 1
+- Simple point 2
+Content:
+${truncatedContent}`;
+    } else {
+      actionLabel = "⏳ Processing...";
+      prompt = promptType;
+    }
+
+    // Only show the action label in chat, not the whole prompt!
+    addChatMessage('user', actionLabel);
+    sendButton.disabled = true;
+    const loadingId = addChatMessage('assistant', '...', true);
+
+    try {
+      const response = await fetch('http://localhost:3000/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: prompt,
+          pageContext,
+          conversationHistory
+        })
+      });
+      const result = await response.json();
+      document.getElementById(loadingId)?.remove();
+      addChatMessage('assistant', result.reply || 'No reply received.');
+      conversationHistory.push({ role: 'assistant', content: result.reply });
+    } catch (err) {
+      document.getElementById(loadingId)?.remove();
+      addChatMessage('assistant', 'Error: ' + err.message);
+    }
+    sendButton.disabled = false;
+  });
+});
+
+
+  // --- (Optional) Chat tab logic can be added here ---
+
+  // When you're ready to add Page Chat logic, you can start by:
+  // - Handling "Send" button click in the chat tab
+  // - Displaying messages in #chatMessages
+  // - Integrating your backend for AI replies
+
+});
+// --- Page Chat Step 1: Basic UI & Send Handler ---
+const chatInput = document.getElementById('chatInput');
+const sendButton = document.getElementById('sendMessage');
+const chatMessages = document.getElementById('chatMessages');
+const clearChatBtn = document.getElementById('clearChat');
+
+// Chat history array
+let conversationHistory = [];
+
+// Send message handler
+function getPageContext(tabId) {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.sendMessage(tabId, { action: 'getPageContext' }, (response) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(response);
+      }
+    });
+  });
+}
+
+async function handleSendMessage() {
+  const message = chatInput.value.trim();
+  if (!message) return;
+
+  addChatMessage('user', message);
+  chatInput.value = '';
+  sendButton.disabled = true;
+  const loadingId = addChatMessage('assistant', '...', true);
+
+  let pageContext = {};
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    pageContext = await getPageContext(tab.id);
+
+    // --- Send to backend ---
+    const response = await fetch('http://localhost:3000/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        pageContext,
+        conversationHistory  // (if you want context for multi-turn)
+      })
+    });
+    const result = await response.json();
+
+    document.getElementById(loadingId)?.remove();
+    addChatMessage('assistant', result.reply || 'No reply received.');
+    conversationHistory.push({ role: 'assistant', content: result.reply });
+  } catch (err) {
+    document.getElementById(loadingId)?.remove();
+    addChatMessage('assistant', 'Error: ' + err.message);
+  }
+  sendButton.disabled = false;
+}
+
+
+
+// Utility: Add message to chatMessages panel
+function addChatMessage(role, content, isLoading = false) {
+  const messageId = `msg-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message message-${role}`;
+  messageDiv.id = messageId;
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'message-content';
+  if (isLoading) {
+    contentDiv.innerHTML = `
+      <span class="loading-indicator"></span>
+      <span class="loading-indicator"></span>
+      <span class="loading-indicator"></span>`;
+  } else {
+    contentDiv.textContent = content;
+  }
+  messageDiv.appendChild(contentDiv);
+  chatMessages.appendChild(messageDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // Remove welcome message if still visible
+  const welcomeMsg = chatMessages.querySelector('.welcome-message');
+  if (welcomeMsg) welcomeMsg.remove();
+  return messageId;
+}
+
+// Handle send button click
+sendButton.addEventListener('click', handleSendMessage);
+// Handle Enter key
+chatInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSendMessage();
+  }
+});
+
+// Clear chat history
+clearChatBtn.addEventListener('click', () => {
+  conversationHistory = [];
+  chatMessages.innerHTML = `<div class="welcome-message"><p>👋 Chat cleared! Ask me anything about this page.</p></div>`;
 });

@@ -64,6 +64,9 @@ body {
 body.theme-light .switch-ball { left: 2px; background: #fff; }
 body.theme-dark .switch-ball { left: 22px; background: #334155; }
 .switch-icons { position: absolute; top: 0; left: 0; right: 0; height: 22px; width: 42px; }
+.switch-icons svg { position: absolute; top: 50%; transform: translateY(-50%); }
+.switch-icons .sun-icon { left: 6px; }
+.switch-icons .moon-icon { right: 6px; }
 .sun-icon { opacity: 1; transition: opacity .3s;}
 .moon-icon { opacity: .34; transition: opacity .3s;}
 body.theme-dark .sun-icon { opacity: .2; }
